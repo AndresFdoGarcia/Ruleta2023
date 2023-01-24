@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace Ruleta2023.Domain.Data.Users
 {
-    public class ClientClass
+    public class UserClass
     {
         public string Id { get; set; }
+        public string Role { get; set; }
         public string UserFirstName { get; set; }
         public string UserLasttName { get; set; }
         public string UserNickName { get; set; }

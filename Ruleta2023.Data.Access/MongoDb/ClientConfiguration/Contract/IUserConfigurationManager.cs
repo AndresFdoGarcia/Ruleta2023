@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Contract
 {
-    public interface IClientConfigurationManager
+    public interface IUserConfigurationManager
     {
-        Task<ClientClass> GetClient(string id);
-        Task Save(ClientClass entity);
-        Task Update(ClientClass entity);
+        Task<UserClass> GetClient(string id);
+        Task Save(UserClass entity);
+        Task Update(UserClass entity);
         Task Delete(string id);
     }
 }

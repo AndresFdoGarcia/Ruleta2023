@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using System.Xml.Xsl;
 using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Implementation;
 using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Contract;
+using Autofac.Features.AttributeFilters;
+using Ruleta2023.Business.Core.Business.User;
 
 namespace Ruleta2023.Business.Core.IoCContainer
 {
@@ -34,6 +36,7 @@ namespace Ruleta2023.Business.Core.IoCContainer
             builder.RegisterInstance<string>(configuration["GroupConfig"]).Keyed<string>("Group");
 
             RegisterMongoDbRepositories(builder, configuration);
+            RegisterBusinessImplementations(builder, configuration);
 
             return builder;
         }
@@ -67,12 +70,17 @@ namespace Ruleta2023.Business.Core.IoCContainer
             builder.RegisterInstance(mongoDbClient).As<MongoClient>();
 
 
-            builder.Register((context, parameters) => new MongoDBClientConfigurationManager(
+            builder.Register((context, parameters) => new MongoDBUserConfigurationManager(
                 context.Resolve<MongoClient>(),
                 configuration["MongoDB:database"],
                 configuration["MongoDB:UsersCollection"]))
-            .As<IClientConfigurationManager>().SingleInstance();       
+            .As<IUserConfigurationManager>().SingleInstance();       
 
+        }
+
+        private static void RegisterBusinessImplementations(ContainerBuilder builder, IConfiguration configuration)
+        {
+            builder.RegisterType<UserConfigurationBusiness>().WithAttributeFiltering();
         }
     }
 }

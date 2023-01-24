@@ -10,13 +10,13 @@ using Serilog;
 
 namespace Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Implementation
 {
-    public class MongoDBClientConfigurationManager : IClientConfigurationManager
+    public class MongoDBUserConfigurationManager : IUserConfigurationManager
     {
         private MongoClient client;
         private string collectionName;
         private IMongoDatabase database;
 
-        public MongoDBClientConfigurationManager(MongoClient client, string dbName, string collectionName)
+        public MongoDBUserConfigurationManager(MongoClient client, string dbName, string collectionName)
         {
             this.client = client;
             this.collectionName = collectionName;
@@ -28,13 +28,13 @@ namespace Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Implementation
             throw new NotImplementedException();
         }
 
-        public async Task<ClientClass> GetClient(string id)
+        public async Task<UserClass> GetClient(string id)
         {
 
             try
             {
-                IMongoCollection<ClientClass> collection = database.GetCollection<ClientClass>(collectionName);
-                var builder = Builders<ClientClass>.Filter;
+                IMongoCollection<UserClass> collection = database.GetCollection<UserClass>(collectionName);
+                var builder = Builders<UserClass>.Filter;
                 var filter = builder.And(builder.Eq(row => row.Id, id));
                 return (await collection.FindAsync(filter)).FirstOrDefault();
             }
@@ -46,12 +46,12 @@ namespace Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Implementation
         }
 
 
-        public async Task Save(ClientClass entity)
+        public async Task Save(UserClass entity)
         {
 
             try
             {
-                IMongoCollection<ClientClass> collection = database.GetCollection<ClientClass>(collectionName);
+                IMongoCollection<UserClass> collection = database.GetCollection<UserClass>(collectionName);
                 await collection.InsertOneAsync(entity);
             }
             catch (Exception ex)
@@ -62,13 +62,13 @@ namespace Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Implementation
 
         }
 
-        public async Task Update(ClientClass entity)
+        public async Task Update(UserClass entity)
         {
 
             try
             {
-                var collection = database.GetCollection<ClientClass>(collectionName);
-                var filter = Builders<ClientClass>.Filter.Eq(row => row.Id, entity.Id);
+                var collection = database.GetCollection<UserClass>(collectionName);
+                var filter = Builders<UserClass>.Filter.Eq(row => row.Id, entity.Id);
                 var result = await collection.ReplaceOneAsync(filter, entity);
                 if (result.ModifiedCount <= 0)
                     throw new Exception("Updated 0 documents");
