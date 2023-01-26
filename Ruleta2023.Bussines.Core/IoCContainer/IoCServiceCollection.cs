@@ -14,6 +14,11 @@ using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Implementation;
 using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Contract;
 using Autofac.Features.AttributeFilters;
 using Ruleta2023.Business.Core.Business.User;
+using Ruleta2023.Data.Access.Redis.Contract;
+using Ruleta2023.Data.Access.Redis.Implementation;
+using StackExchange.Redis;
+using RedLockNet.SERedis.Configuration;
+using RedLockNet.SERedis;
 
 namespace Ruleta2023.Business.Core.IoCContainer
 {
@@ -37,6 +42,8 @@ namespace Ruleta2023.Business.Core.IoCContainer
 
             RegisterMongoDbRepositories(builder, configuration);
             RegisterBusinessImplementations(builder, configuration);
+            RegisterStringValues(builder, configuration);
+            RegisterDataAccess(builder, configuration);
 
             return builder;
         }
@@ -81,6 +88,26 @@ namespace Ruleta2023.Business.Core.IoCContainer
         private static void RegisterBusinessImplementations(ContainerBuilder builder, IConfiguration configuration)
         {
             builder.RegisterType<UserConfigurationBusiness>().WithAttributeFiltering();
+        }
+
+        private static void RegisterStringValues(ContainerBuilder builder, IConfiguration configuration)
+        {
+            builder.RegisterInstance<string>(configuration["Redis:Url"]).Keyed<string>("RedisUrl");
+            builder.RegisterInstance<string>(configuration["Redis:TtlSeconds"]);            
+        }
+
+        private static void RegisterDataAccess(ContainerBuilder builder, IConfiguration configuration)
+        {
+            builder.RegisterType<RedisCacheHelper>().As<ICacheHelper>().WithAttributeFiltering().SingleInstance();
+
+            ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(configuration["Redis:Url"]);
+            builder.RegisterInstance(redis).As<IConnectionMultiplexer>().SingleInstance();
+            List<RedLockMultiplexer> multiplexers = new List<RedLockMultiplexer>
+            {
+                redis
+            };
+            RedLockFactory redLockFactory = RedLockFactory.Create(multiplexers);
+            builder.RegisterInstance(redLockFactory).As<RedLockFactory>();
         }
     }
 }

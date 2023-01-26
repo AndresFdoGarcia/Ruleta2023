@@ -11,7 +11,7 @@ namespace Ruleta2023.Domain.Data.Users
         public string Id { get; set; }
         public string Role { get; set; }
         public string UserFirstName { get; set; }
-        public string UserLasttName { get; set; }
+        public string UserLastName { get; set; }
         public string UserNickName { get; set; }
         public List<int> ActivePermissions { get; set; }
         public string idToken { get; set; }

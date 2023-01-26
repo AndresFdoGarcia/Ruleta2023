@@ -1,35 +1,35 @@
-﻿using MongoDB.Bson;
-using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Contract;
-using Ruleta2023.Domain.Data.Users;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MongoDB.Bson;
+using Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Contract;
+using Ruleta2023.Domain.Data.Ruleta;
+using Serilog;
 
-namespace Ruleta2023.Business.Core.Business.User
+namespace Ruleta2023.Business.Core.Business.Roulette
 {
-    public class UserConfigurationBusiness
+    public class RouletteConfigurationBusiness
     {
-        private readonly IUserConfigurationManager clientConfiguration;
+        private readonly IRouletteConfigurationManager rouletteConfiguration;
 
-        public UserConfigurationBusiness (IUserConfigurationManager clientConfiguration)
+        public RouletteConfigurationBusiness(IRouletteConfigurationManager rouletteConfiguration)
         {
-            this.clientConfiguration = clientConfiguration;
+            this.rouletteConfiguration = rouletteConfiguration;
         }
 
-        public TResponse CreateUser(UserClass user)
+        public TResponse CreateRoulette(RouletteClass roulette)
         {
-            if (user.UserNickName == null || user.Role == null)
+            if (roulette.State == null)
             {
                 return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.MISSING_MANDATORY_PARAMETERS);
             }
 
             try
             {
-                user.Id = ObjectId.GenerateNewId().ToString();
-                clientConfiguration.Save(user);
+                roulette.Id = ObjectId.GenerateNewId().ToString();
+                rouletteConfiguration.Save(roulette);
                 return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
             }
             catch (Exception ex)
@@ -38,7 +38,6 @@ namespace Ruleta2023.Business.Core.Business.User
                 return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.MISSING_MANDATORY_PARAMETERS);
             }
         }
-
 
         public class TResponse
         {
@@ -64,7 +63,7 @@ namespace Ruleta2023.Business.Core.Business.User
 
                     case TemplateErrorResponseCode.UPDATE_SUCCESS:
                         errorCode = 200;
-                        if (string.IsNullOrEmpty(message)) message = "User updated OK";
+                        if (string.IsNullOrEmpty(message)) message = "Roulette state updated OK";
                         break;
 
                     case TemplateErrorResponseCode.INTERNAL_ERROR:
