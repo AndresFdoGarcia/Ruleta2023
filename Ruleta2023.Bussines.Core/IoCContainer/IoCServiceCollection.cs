@@ -19,6 +19,9 @@ using Ruleta2023.Data.Access.Redis.Implementation;
 using StackExchange.Redis;
 using RedLockNet.SERedis.Configuration;
 using RedLockNet.SERedis;
+using Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Implementation;
+using Ruleta2023.Business.Core.Business.Roulette;
+using Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Contract;
 
 namespace Ruleta2023.Business.Core.IoCContainer
 {
@@ -81,13 +84,20 @@ namespace Ruleta2023.Business.Core.IoCContainer
                 context.Resolve<MongoClient>(),
                 configuration["MongoDB:database"],
                 configuration["MongoDB:UsersCollection"]))
-            .As<IUserConfigurationManager>().SingleInstance();       
+            .As<IUserConfigurationManager>().SingleInstance();
+
+            builder.Register((context, parameters) => new MongoDBRouletteConfigurationManager(
+                context.Resolve<MongoClient>(),
+                configuration["MongoDB:database"],
+                configuration["MongoDB:RouletteCollection"]))
+            .As<IRouletteConfigurationManager>().SingleInstance();
 
         }
 
         private static void RegisterBusinessImplementations(ContainerBuilder builder, IConfiguration configuration)
         {
             builder.RegisterType<UserConfigurationBusiness>().WithAttributeFiltering();
+            builder.RegisterType<RouletteConfigurationBusiness>().WithAttributeFiltering();
         }
 
         private static void RegisterStringValues(ContainerBuilder builder, IConfiguration configuration)

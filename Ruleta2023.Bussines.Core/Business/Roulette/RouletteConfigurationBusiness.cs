@@ -19,24 +19,52 @@ namespace Ruleta2023.Business.Core.Business.Roulette
             this.rouletteConfiguration = rouletteConfiguration;
         }
 
-        public TResponse CreateRoulette(RouletteClass roulette)
-        {
-            if (roulette.State == null)
-            {
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.MISSING_MANDATORY_PARAMETERS);
-            }
-
+        public string CreateRoulette()
+        {           
+            RouletteClass roulette = new RouletteClass();
             try
             {
                 roulette.Id = ObjectId.GenerateNewId().ToString();
                 rouletteConfiguration.Save(roulette);
+                return roulette.Id;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Exception {0}", ex);
+                return ("Failed to create");
+            }
+        }
+
+        public TResponse OpenRoulette(string id)
+        {
+            try
+            {
+                RouletteClass response = rouletteConfiguration.GetRoulette(id).Result;
+
+                if(response.State == "Cerrada")
+                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
+
+                if (response == null)
+                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
+
+
+                response.State = "Abierta";
+                rouletteConfiguration.Update(response);
                 return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
             }
             catch (Exception ex)
             {
                 Log.Error("Exception {0}", ex);
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.MISSING_MANDATORY_PARAMETERS);
+                return(null);
             }
+            
+            
+        }
+
+        public List<RouletteClass> GetAllRouletts()
+        {
+            List<RouletteClass> response = rouletteConfiguration.GetAll().Result;
+            return response;
         }
 
         public class TResponse
@@ -53,7 +81,7 @@ namespace Ruleta2023.Business.Core.Business.Roulette
                 {
                     case TemplateErrorResponseCode.DATA_OK:
                         errorCode = 200;
-                        if (string.IsNullOrEmpty(message)) message = "Resgistered";
+                        if (string.IsNullOrEmpty(message)) message = "Roulette oppend";
                         break;
 
                     case TemplateErrorResponseCode.MISSING_MANDATORY_PARAMETERS:
@@ -71,6 +99,15 @@ namespace Ruleta2023.Business.Core.Business.Roulette
                         if (string.IsNullOrEmpty(message)) message = "Internal server error";
                         break;
 
+                    case TemplateErrorResponseCode.INVALID_REQUEST:
+                        errorCode= 400;
+                        if (string.IsNullOrEmpty(message)) message = "The roulette is already closed";
+                        break;
+
+                    case TemplateErrorResponseCode.NOT_MATCH:
+                        errorCode = 400;
+                        if (string.IsNullOrEmpty(message)) message = "The roulette doesn't exist";
+                        break;
                 }
 
                 return new TResponse
@@ -86,7 +123,9 @@ namespace Ruleta2023.Business.Core.Business.Roulette
             MISSING_MANDATORY_PARAMETERS = 1,
             DATA_OK = 0,
             UPDATE_SUCCESS = 2,
-            INTERNAL_ERROR = 1599
+            INTERNAL_ERROR = 1599,
+            INVALID_REQUEST = 3,
+            NOT_MATCH = 4
         }
     }
 }

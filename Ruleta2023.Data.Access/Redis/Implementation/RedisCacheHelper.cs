@@ -1,4 +1,5 @@
 ﻿using Autofac.Features.AttributeFilters;
+using Ruleta2023.Data.Access.Redis.Contract;
 using Serilog;
 using StackExchange.Redis;
 using System;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Ruleta2023.Data.Access.Redis.Implementation
 {
-    public class RedisCacheHelper
+    public class RedisCacheHelper : ICacheHelper
     {
         private readonly IDatabase db;
         private readonly ConnectionMultiplexer redis;

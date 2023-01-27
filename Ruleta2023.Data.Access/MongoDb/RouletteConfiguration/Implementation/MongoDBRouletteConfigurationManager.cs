@@ -29,7 +29,7 @@ namespace Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Implementation
             throw new NotImplementedException();
         }
 
-        public async Task<RouletteClass> GetClient(string id)
+        public async Task<RouletteClass> GetRoulette(string id)
         {
 
             try
@@ -80,6 +80,22 @@ namespace Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Implementation
                 throw;
             }
 
+        }
+
+        public async Task<List<RouletteClass>> GetAll()
+        {
+            try
+            {
+                var filter = Builders<RouletteClass>.Filter.Empty;
+                IMongoCollection<RouletteClass> collection = database.GetCollection<RouletteClass>(collectionName);                
+                List<RouletteClass> result = await collection.Find(filter).ToListAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);               
+                return null;
+            }            
         }
     }
 }
