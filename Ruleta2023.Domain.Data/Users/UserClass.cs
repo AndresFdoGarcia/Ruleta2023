@@ -16,5 +16,6 @@ namespace Ruleta2023.Domain.Data.Users
         public List<int> ActivePermissions { get; set; }
         public string idToken { get; set; }
         public bool IsActive { get; set; }
+        public int MoneyClient { get; set; }
     }
 }

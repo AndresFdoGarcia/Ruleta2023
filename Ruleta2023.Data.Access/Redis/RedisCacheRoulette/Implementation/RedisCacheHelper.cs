@@ -1,5 +1,5 @@
 ﻿using Autofac.Features.AttributeFilters;
-using Ruleta2023.Data.Access.Redis.Contract;
+using Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Contract;
 using Serilog;
 using StackExchange.Redis;
 using System;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ruleta2023.Data.Access.Redis.Implementation
+namespace Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Implementation
 {
     public class RedisCacheHelper : ICacheHelper
     {
@@ -38,7 +38,7 @@ namespace Ruleta2023.Data.Access.Redis.Implementation
         {
             try
             {
-                await db.StringSetAsync(key, value, TimeSpan.FromSeconds(ttlKeyS));
+                db.ListRightPush(key, value);
             }
             catch (Exception ex)
             {

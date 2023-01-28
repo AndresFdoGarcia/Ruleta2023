@@ -56,9 +56,31 @@ namespace Ruleta2023.Business.Core.Business.Roulette
             {
                 Log.Error("Exception {0}", ex);
                 return(null);
+            }            
+        }
+
+        public TResponse CloseRoulette(string id)
+        {
+            try
+            {
+                RouletteClass response = rouletteConfiguration.GetRoulette(id).Result;
+
+                if (response.State == "Cerrada")
+                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
+
+                if (response == null)
+                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
+
+
+                response.State = "Cerrada";
+                rouletteConfiguration.Update(response);
+                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
             }
-            
-            
+            catch (Exception ex)
+            {
+                Log.Error("Exception {0}", ex);
+                return (null);
+            }
         }
 
         public List<RouletteClass> GetAllRouletts()

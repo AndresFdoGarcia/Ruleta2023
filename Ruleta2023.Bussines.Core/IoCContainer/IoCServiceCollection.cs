@@ -14,14 +14,17 @@ using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Implementation;
 using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Contract;
 using Autofac.Features.AttributeFilters;
 using Ruleta2023.Business.Core.Business.User;
-using Ruleta2023.Data.Access.Redis.Contract;
-using Ruleta2023.Data.Access.Redis.Implementation;
 using StackExchange.Redis;
 using RedLockNet.SERedis.Configuration;
 using RedLockNet.SERedis;
 using Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Implementation;
 using Ruleta2023.Business.Core.Business.Roulette;
 using Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Contract;
+using Ruleta2023.Business.Core.Business.Bets;
+using Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Contract;
+using Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Implementation;
+using Ruleta2023.Data.Access.Redis.RedisCacheClient.Implementation;
+using Ruleta2023.Data.Access.Redis.RedisCacheClient.Contract;
 
 namespace Ruleta2023.Business.Core.IoCContainer
 {
@@ -98,17 +101,19 @@ namespace Ruleta2023.Business.Core.IoCContainer
         {
             builder.RegisterType<UserConfigurationBusiness>().WithAttributeFiltering();
             builder.RegisterType<RouletteConfigurationBusiness>().WithAttributeFiltering();
+            builder.RegisterType<BetConfigurationBusiness>().WithAttributeFiltering();
         }
 
         private static void RegisterStringValues(ContainerBuilder builder, IConfiguration configuration)
         {
             builder.RegisterInstance<string>(configuration["Redis:Url"]).Keyed<string>("RedisUrl");
-            builder.RegisterInstance<string>(configuration["Redis:TtlSeconds"]);            
+            builder.RegisterInstance<string>(configuration["Redis:TtlSeconds"]).Keyed<string>("RedisTtlSeconds");            
         }
 
         private static void RegisterDataAccess(ContainerBuilder builder, IConfiguration configuration)
         {
             builder.RegisterType<RedisCacheHelper>().As<ICacheHelper>().WithAttributeFiltering().SingleInstance();
+            builder.RegisterType<RedisCacheClient>().As<ICacheClient>().WithAttributeFiltering().SingleInstance();
 
             ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(configuration["Redis:Url"]);
             builder.RegisterInstance(redis).As<IConnectionMultiplexer>().SingleInstance();
