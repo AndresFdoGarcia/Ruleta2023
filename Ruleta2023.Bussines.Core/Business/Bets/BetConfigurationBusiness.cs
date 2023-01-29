@@ -15,6 +15,8 @@ using Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Contract;
 using Ruleta2023.Data.Access.Redis.RedisCacheClient.Contract;
 using Ruleta2023.Data.Access.MongoDb.ClientConfiguration.Contract;
 using Ruleta2023.Domain.Data.Users;
+using Ruleta2023.Domain.Data.TResponse;
+using System.Drawing;
 
 namespace Ruleta2023.Business.Core.Business.Bets
 {
@@ -24,7 +26,7 @@ namespace Ruleta2023.Business.Core.Business.Bets
         private readonly IUserConfigurationManager _UserConfiguration;
         private readonly ICacheHelper _RedisCache;
         private readonly ICacheClient _CacheClient;
-        private readonly string RedisTtlSeconds;
+        private readonly string TtlSeconds;
         
 
         public BetConfigurationBusiness(
@@ -32,95 +34,81 @@ namespace Ruleta2023.Business.Core.Business.Bets
             IUserConfigurationManager userConfiguration,
             ICacheHelper cacheHelper,
             ICacheClient cacheClient,
-            [KeyFilter("RedisTtlSeconds")] string redisTtlSeconds)
+            string TtlSeconds)
         {
             this.rouletteConfiguration = rouletteConfiguration;
             _RedisCache = cacheHelper;
             _CacheClient = cacheClient;
             _UserConfiguration = userConfiguration;
-            RedisTtlSeconds = redisTtlSeconds;            
+            this.TtlSeconds = TtlSeconds;            
         }
 
-        public async Task<TResponse> MakeBet(BetClass bet, string idRoulette)
+        public async Task<CResponseClass> MakeBet(BetClass bet, string idRoulette)
         {
             MiddleDataClient middleData = new MiddleDataClient();
             middleData.IdClient = bet.ClientId;
             var ActualDataMoney = Int32.Parse(await PopulateDataMoney(bet.ClientId));
 
             if (ActualDataMoney < Int32.Parse(bet.MoneyBet.ToString()))
-                 return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
+                 return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
 
             middleData.DataMoneyRn = ActualDataMoney - Int32.Parse(bet.MoneyBet.ToString());
-            await _CacheClient.Set(middleData.IdClient, middleData.DataMoneyRn.ToString(), int.Parse(RedisTtlSeconds));
+            await _CacheClient.Set(middleData.IdClient, middleData.DataMoneyRn.ToString(), int.Parse(TtlSeconds));
 
             RouletteClass responseRoulette = rouletteConfiguration.GetRoulette(idRoulette).Result;         
 
             if (responseRoulette.State == "Cerrada")
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
+                return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
 
             if (responseRoulette == null)
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
+                return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
        
 
             try
             {
                 bet.Id = ObjectId.GenerateNewId().ToString();
-                await _RedisCache.Set(responseRoulette.Id.ToString(), JsonConvert.SerializeObject(bet), int.Parse(RedisTtlSeconds));
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
+                await _RedisCache.Set(responseRoulette.Id.ToString(), JsonConvert.SerializeObject(bet), int.Parse(TtlSeconds));
+                return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
             }
             catch (Exception ex)
             {
                 Log.Error("Exception {0}", ex);
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.INTERNAL_ERROR);
+                return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.INTERNAL_ERROR);
             }
             
         }
 
-        public class TResponse
+        public async Task<EventResponse> ResolveBetProcess(string idRoulette)
         {
-            public string statusmessage { get; set; }
-            public int statusCode { get; set; }
-
-            public static TResponse TemplateErrorResponse(TemplateErrorResponseCode error)
+            try
             {
-                int errorCode = 0;
-                string message = "";
+                List<BetClass> bets = await _RedisCache.GetAllBets(idRoulette);
+                Random r = new Random();
 
-                switch (error)
-                {
-                    case TemplateErrorResponseCode.DATA_OK:
-                        errorCode = 200;
-                        if (string.IsNullOrEmpty(message)) message = "Success";
-                        break;
+                int Rbet = r.Next(0, 36);
+                BetData resultBet = BetResultData(Rbet);
 
-                    case TemplateErrorResponseCode.MISSING_MANDATORY_PARAMETERS:
-                        errorCode = 400;
-                        if (string.IsNullOrEmpty(message)) message = "A mandatory data is missing";
-                        break;                    
+                EventResponse FinalResult = new EventResponse();
+                FinalResult.Wins = resultBet;
+                FinalResult.betTotal = bets;
 
-                    case TemplateErrorResponseCode.INTERNAL_ERROR:
-                        errorCode = 500;
-                        if (string.IsNullOrEmpty(message)) message = "Internal server error";
-                        break;
+                await ChooseWinner(bets, resultBet);          
 
-                    case TemplateErrorResponseCode.INVALID_REQUEST:
-                        errorCode = 400;
-                        if (string.IsNullOrEmpty(message)) message = "The roulette is already closed";
-                        break;
+                RouletteClass response = rouletteConfiguration.GetRoulette(idRoulette).Result;
+                response.State = "Cerrada";
+                await rouletteConfiguration.Update(response);
 
-                    case TemplateErrorResponseCode.NOT_MATCH:
-                        errorCode = 400;
-                        if (string.IsNullOrEmpty(message)) message = "The roulette doesn't exist";
-                        break;
-                }
+                await _RedisCache.DeleteKey(idRoulette);
 
-                return new TResponse
-                {
-                    statusCode = errorCode,
-                    statusmessage = message
-                };
+                return FinalResult;
             }
-        }
+            catch (Exception ex)
+            {
+                Log.Error("Exception {0}", ex);
+                return new EventResponse { };
+            }
+            
+        }        
 
         public async Task<string> PopulateDataMoney(string id)
         {
@@ -138,19 +126,57 @@ namespace Ruleta2023.Business.Core.Business.Bets
             return response;
         }
 
-        public enum TemplateErrorResponseCode
+        public BetData BetResultData(int i)
         {
-            MISSING_MANDATORY_PARAMETERS = 1,
-            DATA_OK = 0,            
-            INTERNAL_ERROR = 1599,
-            INVALID_REQUEST = 3,
-            NOT_MATCH = 4
+            string result;
+            if (i % 2 == 0)
+            {
+                result = "Rojo";
+            }
+            else
+            {
+                result = "Negro";
+            }
+
+            return new BetData
+            {
+                NumberSelected = i,
+                ColorSelected = result
+            };
         }
 
-        public class MiddleDataClient
+        public async Task ChooseWinner(List<BetClass> bets, BetData resultBet)
+        {
+            foreach(BetClass beti in bets) {
+
+                var ActualDataMoney = Int32.Parse(await PopulateDataMoney(beti.ClientId));
+
+                switch (beti.typeBet)
+                {
+                    case TypeBet.COLOR:
+                        if(resultBet.ColorSelected == beti.BetDone.ColorSelected)
+                            await _CacheClient.Set(beti.ClientId, (ActualDataMoney + (beti.MoneyBet * 1.8)).ToString(), int.Parse(TtlSeconds));
+                        break;
+
+                    case TypeBet.NUMBER:
+                        if(resultBet.NumberSelected == beti.BetDone.NumberSelected)
+                            await _CacheClient.Set(beti.ClientId, (ActualDataMoney + (beti.MoneyBet * 5)).ToString(), int.Parse(TtlSeconds));
+                        break;
+                }
+
+            }            
+        }
+
+        private class MiddleDataClient
         {
             public string IdClient { get; set; }
             public int DataMoneyRn { get; set; }
+        }
+        
+        public class EventResponse
+        {
+            public BetData Wins { get; set; }
+            public List<BetClass> betTotal { get; set; }
         }
     }
 }

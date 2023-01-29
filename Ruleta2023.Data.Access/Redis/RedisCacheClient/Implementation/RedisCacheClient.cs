@@ -60,6 +60,6 @@ namespace Ruleta2023.Data.Access.Redis.RedisCacheClient.Implementation
             {
                 Log.Error(ex.Message, $"In DeleteKey Redis client, key [{key}]");
             }
-        }
+        }        
     }
 }

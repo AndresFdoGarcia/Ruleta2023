@@ -10,6 +10,6 @@ namespace Ruleta2023.Data.Access.Redis.RedisCacheClient.Contract
     {
         Task<string> Get(string key);
         Task Set(string key, string value, int TtlKeyS);
-        Task DeleteKey(string key);
+        Task DeleteKey(string key);        
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MongoDB.Bson;
 using Ruleta2023.Data.Access.MongoDb.RouletteConfiguration.Contract;
 using Ruleta2023.Domain.Data.Ruleta;
+using Ruleta2023.Domain.Data.TResponse;
 using Serilog;
 
 namespace Ruleta2023.Business.Core.Business.Roulette
@@ -35,22 +36,22 @@ namespace Ruleta2023.Business.Core.Business.Roulette
             }
         }
 
-        public TResponse OpenRoulette(string id)
+        public CResponseClass OpenRoulette(string id)
         {
             try
             {
                 RouletteClass response = rouletteConfiguration.GetRoulette(id).Result;
 
                 if(response.State == "Cerrada")
-                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
+                    return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
 
                 if (response == null)
-                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
+                    return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
 
 
                 response.State = "Abierta";
                 rouletteConfiguration.Update(response);
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
+                return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
             }
             catch (Exception ex)
             {
@@ -59,22 +60,22 @@ namespace Ruleta2023.Business.Core.Business.Roulette
             }            
         }
 
-        public TResponse CloseRoulette(string id)
+        public CResponseClass CloseRoulette(string id)
         {
             try
             {
                 RouletteClass response = rouletteConfiguration.GetRoulette(id).Result;
 
                 if (response.State == "Cerrada")
-                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
+                    return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.INVALID_REQUEST);
 
                 if (response == null)
-                    return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
+                    return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.NOT_MATCH);
 
 
                 response.State = "Cerrada";
                 rouletteConfiguration.Update(response);
-                return TResponse.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
+                return CResponseClass.TemplateErrorResponse(TemplateErrorResponseCode.DATA_OK);
             }
             catch (Exception ex)
             {
@@ -87,67 +88,6 @@ namespace Ruleta2023.Business.Core.Business.Roulette
         {
             List<RouletteClass> response = rouletteConfiguration.GetAll().Result;
             return response;
-        }
-
-        public class TResponse
-        {
-            public string statusmessage { get; set; }
-            public int statusCode { get; set; }
-
-            public static TResponse TemplateErrorResponse(TemplateErrorResponseCode error)
-            {
-                int errorCode = 0;
-                string message = "";
-
-                switch (error)
-                {
-                    case TemplateErrorResponseCode.DATA_OK:
-                        errorCode = 200;
-                        if (string.IsNullOrEmpty(message)) message = "Roulette oppend";
-                        break;
-
-                    case TemplateErrorResponseCode.MISSING_MANDATORY_PARAMETERS:
-                        errorCode = 400;
-                        if (string.IsNullOrEmpty(message)) message = "A mandatory data is missing";
-                        break;
-
-                    case TemplateErrorResponseCode.UPDATE_SUCCESS:
-                        errorCode = 200;
-                        if (string.IsNullOrEmpty(message)) message = "Roulette state updated OK";
-                        break;
-
-                    case TemplateErrorResponseCode.INTERNAL_ERROR:
-                        errorCode = 500;
-                        if (string.IsNullOrEmpty(message)) message = "Internal server error";
-                        break;
-
-                    case TemplateErrorResponseCode.INVALID_REQUEST:
-                        errorCode= 400;
-                        if (string.IsNullOrEmpty(message)) message = "The roulette is already closed";
-                        break;
-
-                    case TemplateErrorResponseCode.NOT_MATCH:
-                        errorCode = 400;
-                        if (string.IsNullOrEmpty(message)) message = "The roulette doesn't exist";
-                        break;
-                }
-
-                return new TResponse
-                {
-                    statusCode = errorCode,
-                    statusmessage = message
-                };
-            }
-        }
-
-        public enum TemplateErrorResponseCode
-        {
-            MISSING_MANDATORY_PARAMETERS = 1,
-            DATA_OK = 0,
-            UPDATE_SUCCESS = 2,
-            INTERNAL_ERROR = 1599,
-            INVALID_REQUEST = 3,
-            NOT_MATCH = 4
-        }
+        }        
     }
 }

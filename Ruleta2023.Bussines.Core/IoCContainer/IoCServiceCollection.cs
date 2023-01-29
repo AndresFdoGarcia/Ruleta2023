@@ -102,6 +102,14 @@ namespace Ruleta2023.Business.Core.IoCContainer
             builder.RegisterType<UserConfigurationBusiness>().WithAttributeFiltering();
             builder.RegisterType<RouletteConfigurationBusiness>().WithAttributeFiltering();
             builder.RegisterType<BetConfigurationBusiness>().WithAttributeFiltering();
+
+            builder.Register((context, parameters) => new BetConfigurationBusiness(
+                context.Resolve<IRouletteConfigurationManager>(),
+                context.Resolve<IUserConfigurationManager>(),
+                context.Resolve<ICacheHelper>(),
+                context.Resolve<ICacheClient>(),
+                configuration["Redis:TtlSeconds"]))
+            .As<BetConfigurationBusiness>().SingleInstance();
         }
 
         private static void RegisterStringValues(ContainerBuilder builder, IConfiguration configuration)

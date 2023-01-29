@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ruleta2023.Domain.Data.Bets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,5 +12,6 @@ namespace Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Contract
         Task<string> Get(string key);
         Task Set(string key, string value, int TtlKeyS);
         Task DeleteKey(string key);
+        Task<List<BetClass>> GetAllBets(string key);
     }
 }

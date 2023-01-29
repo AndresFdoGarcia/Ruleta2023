@@ -1,5 +1,6 @@
 ﻿using Autofac.Features.AttributeFilters;
 using Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Contract;
+using Ruleta2023.Domain.Data.Bets;
 using Serilog;
 using StackExchange.Redis;
 using System;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Implementation
 {
@@ -56,6 +58,25 @@ namespace Ruleta2023.Data.Access.Redis.RedisCacheRoulette.Implementation
             {
                 Log.Error(ex.Message, $"In DeleteKey Redis client, key [{key}]");
             }
+        }
+
+        public async Task<List<BetClass>> GetAllBets(string id)
+        {
+            List<BetClass> result = new List<BetClass>();
+            try
+            {
+                var response = await db.ListRangeAsync(id, 0, -1);
+                foreach (var item in response)
+                {
+                    result.Add(JsonConvert.DeserializeObject<BetClass>(item));
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex.Message, $"In Get Redis client, doesn´t match");
+            }
+            return result;
         }
     }
 }

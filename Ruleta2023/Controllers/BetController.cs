@@ -21,5 +21,13 @@ namespace Ruleta2023.Controllers
             var response = await betConfiguration.MakeBet(bet, IdRoulette);
             return StatusCode(response.statusCode,response);
         }
+
+        [HttpPost("CloseRoulette")]
+        public async Task<IActionResult> ResolveBets([FromHeader] string IdRoulette)
+        {
+            var response = await betConfiguration.ResolveBetProcess(IdRoulette);
+            return StatusCode(200,response);
+        }
+
     }
 }
